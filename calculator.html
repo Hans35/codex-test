@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>经典计算器</title>
+  <style>
+    :root {
+      --ink: #182026;
+      --muted: #65707a;
+      --page: #edf2f1;
+      --panel: #ffffff;
+      --line: #cbd5d2;
+      --button: #e4ece9;
+      --button-dark: #bfccc7;
+      --screen: #17211d;
+      --green: #26765f;
+      --blue: #2563a8;
+      --red: #b9403a;
+      --yellow: #c28620;
+      --shadow: 0 18px 48px rgba(24, 32, 38, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(135deg, rgba(38, 118, 95, 0.14), transparent 42%),
+        linear-gradient(315deg, rgba(194, 134, 32, 0.12), transparent 38%),
+        var(--page);
+    }
+
+    main {
+      width: min(1060px, calc(100% - 28px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 26px 0;
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) 300px;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .calculator-area {
+      display: grid;
+      justify-items: center;
+      gap: 18px;
+    }
+
+    header {
+      width: min(100%, 480px);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .mode-pill {
+      min-width: 112px;
+      padding: 12px 14px;
+      border: 1px solid rgba(24, 32, 38, 0.12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 8px 28px rgba(24, 32, 38, 0.08);
+      text-align: right;
+    }
+
+    .mode-pill span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .mode-pill strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+    }
+
+    .calculator {
+      width: min(100%, 480px);
+      border-radius: 8px;
+      border: 1px solid rgba(24, 32, 38, 0.12);
+      background: rgba(255, 255, 255, 0.74);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .screen {
+      min-height: 126px;
+      border-radius: 8px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent),
+        var(--screen);
+      color: white;
+      padding: 18px;
+      display: grid;
+      align-content: end;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .expression {
+      min-height: 22px;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 15px;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .display {
+      min-height: 48px;
+      font-size: clamp(32px, 8vw, 50px);
+      line-height: 1;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button.key {
+      min-height: 58px;
+      border: 1px solid var(--button-dark);
+      border-radius: 8px;
+      background: linear-gradient(145deg, #f6faf8, var(--button));
+      color: var(--ink);
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.8), 0 2px 0 var(--button-dark);
+      font-size: 21px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    button.key:hover {
+      filter: brightness(1.03);
+      transform: translateY(-1px);
+    }
+
+    button.key:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 2px 4px rgba(24, 32, 38, 0.12);
+    }
+
+    .key.operator {
+      color: white;
+      background: var(--blue);
+      border-color: #1b4d84;
+      box-shadow: 0 2px 0 #1b4d84;
+    }
+
+    .key.utility {
+      background: #dce4e1;
+    }
+
+    .key.danger {
+      color: white;
+      background: var(--red);
+      border-color: #92312d;
+      box-shadow: 0 2px 0 #92312d;
+    }
+
+    .key.equal {
+      color: white;
+      background: var(--green);
+      border-color: #1c5948;
+      box-shadow: 0 2px 0 #1c5948;
+    }
+
+    .key.zero {
+      grid-column: span 2;
+    }
+
+    aside {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(24, 32, 38, 0.10);
+      box-shadow: 0 12px 32px rgba(24, 32, 38, 0.10);
+      padding: 18px;
+    }
+
+    .status-title {
+      margin-bottom: 8px;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .status-text {
+      min-height: 48px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .memory {
+      display: grid;
+      gap: 10px;
+    }
+
+    .memory-value {
+      min-height: 72px;
+      border-radius: 8px;
+      background: #f2f5f4;
+      padding: 12px;
+      display: grid;
+      align-content: center;
+      gap: 4px;
+    }
+
+    .memory-value span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .memory-value strong {
+      font-size: 24px;
+      line-height: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .memory-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .memory-actions button {
+      min-height: 40px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--ink);
+      background: #e1e8e6;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .history {
+      max-height: 220px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 3px;
+    }
+
+    .history-item {
+      display: grid;
+      gap: 3px;
+      border-bottom: 1px solid rgba(24, 32, 38, 0.08);
+      padding-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .history-item:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .history-item span {
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-item strong {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      aside {
+        width: min(100%, 480px);
+        margin: 0 auto;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .panel:first-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 620px) {
+      main {
+        width: calc(100% - 18px);
+        padding: 18px 0;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: start;
+      }
+
+      .mode-pill {
+        width: 100%;
+        text-align: left;
+      }
+
+      .calculator {
+        padding: 12px;
+      }
+
+      button.key {
+        min-height: 54px;
+      }
+
+      aside {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="calculator-area" aria-label="计算器">
+      <header>
+        <div>
+          <h1>经典计算器</h1>
+          <p class="subtitle">支持四则运算、百分号、正负号和键盘输入。</p>
+        </div>
+        <div class="mode-pill">
+          <span>模式</span>
+          <strong>标准</strong>
+        </div>
+      </header>
+
+      <section class="calculator">
+        <div class="screen" aria-live="polite">
+          <div class="expression" id="expression">&nbsp;</div>
+          <div class="display" id="display">0</div>
+        </div>
+
+        <div class="keys" aria-label="计算器按键">
+          <button class="key danger" type="button" data-action="clear">AC</button>
+          <button class="key utility" type="button" data-action="backspace">⌫</button>
+          <button class="key utility" type="button" data-action="percent">%</button>
+          <button class="key operator" type="button" data-action="operator" data-value="/">÷</button>
+
+          <button class="key" type="button" data-number="7">7</button>
+          <button class="key" type="button" data-number="8">8</button>
+          <button class="key" type="button" data-number="9">9</button>
+          <button class="key operator" type="button" data-action="operator" data-value="*">×</button>
+
+          <button class="key" type="button" data-number="4">4</button>
+          <button class="key" type="button" data-number="5">5</button>
+          <button class="key" type="button" data-number="6">6</button>
+          <button class="key operator" type="button" data-action="operator" data-value="-">−</button>
+
+          <button class="key" type="button" data-number="1">1</button>
+          <button class="key" type="button" data-number="2">2</button>
+          <button class="key" type="button" data-number="3">3</button>
+          <button class="key operator" type="button" data-action="operator" data-value="+">+</button>
+
+          <button class="key zero" type="button" data-number="0">0</button>
+          <button class="key" type="button" data-action="decimal">.</button>
+          <button class="key equal" type="button" data-action="equals">=</button>
+        </div>
+      </section>
+    </section>
+
+    <aside>
+      <section class="panel" aria-live="polite">
+        <div class="status-title" id="statusTitle">准备计算</div>
+        <div class="status-text" id="statusText">输入数字和运算符即可开始。键盘同样可用。</div>
+      </section>
+
+      <section class="panel memory">
+        <div class="memory-value">
+          <span>记忆值</span>
+          <strong id="memoryValue">0</strong>
+        </div>
+        <div class="memory-actions">
+          <button type="button" data-memory="save">M+</button>
+          <button type="button" data-memory="clear">MC</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="history" id="history" aria-label="计算历史">
+          <div class="history-item"><span>暂无记录</span><strong>--</strong></div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const display = document.querySelector("#display");
+    const expression = document.querySelector("#expression");
+    const statusTitle = document.querySelector("#statusTitle");
+    const statusText = document.querySelector("#statusText");
+    const memoryValue = document.querySelector("#memoryValue");
+    const historyElement = document.querySelector("#history");
+
+    let currentValue = "0";
+    let storedValue = null;
+    let pendingOperator = null;
+    let shouldResetDisplay = false;
+    let memory = 0;
+    let history = [];
+
+    function inputNumber(number) {
+      if (shouldResetDisplay) {
+        currentValue = number;
+        shouldResetDisplay = false;
+      } else if (currentValue === "0") {
+        currentValue = number;
+      } else {
+        currentValue += number;
+      }
+
+      setStatus("输入中", "继续输入数字，或选择一个运算符。");
+      render();
+    }
+
+    function inputDecimal() {
+      if (shouldResetDisplay) {
+        currentValue = "0.";
+        shouldResetDisplay = false;
+      } else if (!currentValue.includes(".")) {
+        currentValue += ".";
+      }
+
+      render();
+    }
+
+    function chooseOperator(operator) {
+      const input = toNumber(currentValue);
+
+      if (pendingOperator && !shouldResetDisplay) {
+        const result = calculate(storedValue, input, pendingOperator);
+        if (result === null) return;
+        storedValue = result;
+        currentValue = formatNumber(result);
+      } else {
+        storedValue = input;
+      }
+
+      pendingOperator = operator;
+      shouldResetDisplay = true;
+      setStatus("已选择运算符", "输入下一个数字后按等号完成计算。");
+      render();
+    }
+
+    function equals() {
+      if (!pendingOperator || storedValue === null) return;
+
+      const right = toNumber(currentValue);
+      const left = storedValue;
+      const operator = pendingOperator;
+      const result = calculate(left, right, operator);
+      if (result === null) return;
+
+      const record = formatNumber(left) + " " + operatorLabel(operator) + " " + formatNumber(right);
+      currentValue = formatNumber(result);
+      history.unshift({ expression: record, result: currentValue });
+      history = history.slice(0, 8);
+      storedValue = null;
+      pendingOperator = null;
+      shouldResetDisplay = true;
+      setStatus("计算完成", record + " = " + currentValue);
+      render();
+    }
+
+    function calculate(left, right, operator) {
+      if (operator === "+") return left + right;
+      if (operator === "-") return left - right;
+      if (operator === "*") return left * right;
+      if (operator === "/") {
+        if (right === 0) {
+          clearCalculator();
+          setStatus("无法计算", "除数不能为 0。");
+          return null;
+        }
+        return left / right;
+      }
+      return right;
+    }
+
+    function applyPercent() {
+      currentValue = formatNumber(toNumber(currentValue) / 100);
+      setStatus("已转换百分比", "当前数字已除以 100。");
+      render();
+    }
+
+    function toggleSign() {
+      if (currentValue === "0") return;
+      currentValue = currentValue.startsWith("-") ? currentValue.slice(1) : "-" + currentValue;
+      render();
+    }
+
+    function backspace() {
+      if (shouldResetDisplay) {
+        currentValue = "0";
+        shouldResetDisplay = false;
+      } else {
+        currentValue = currentValue.length > 1 ? currentValue.slice(0, -1) : "0";
+      }
+      render();
+    }
+
+    function clearCalculator() {
+      currentValue = "0";
+      storedValue = null;
+      pendingOperator = null;
+      shouldResetDisplay = false;
+      setStatus("准备计算", "输入数字和运算符即可开始。键盘同样可用。");
+      render();
+    }
+
+    function saveMemory() {
+      memory += toNumber(currentValue);
+      setStatus("已加入记忆", "当前数字已累加到记忆值。");
+      render();
+    }
+
+    function clearMemory() {
+      memory = 0;
+      setStatus("记忆已清空", "记忆值已恢复为 0。");
+      render();
+    }
+
+    function setStatus(title, text) {
+      statusTitle.textContent = title;
+      statusText.textContent = text;
+    }
+
+    function render() {
+      display.textContent = currentValue;
+      expression.textContent = pendingOperator && storedValue !== null
+        ? formatNumber(storedValue) + " " + operatorLabel(pendingOperator)
+        : "\u00a0";
+      memoryValue.textContent = formatNumber(memory);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (!history.length) {
+        historyElement.innerHTML = '<div class="history-item"><span>暂无记录</span><strong>--</strong></div>';
+        return;
+      }
+
+      historyElement.innerHTML = history
+        .map((item) => '<div class="history-item"><span>' + item.expression + '</span><strong>= ' + item.result + '</strong></div>')
+        .join("");
+    }
+
+    function toNumber(value) {
+      return Number(value);
+    }
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) return "0";
+      const rounded = Math.round((value + Number.EPSILON) * 10000000000) / 10000000000;
+      return String(rounded).length > 14 ? rounded.toExponential(8) : String(rounded);
+    }
+
+    function operatorLabel(operator) {
+      if (operator === "*") return "×";
+      if (operator === "/") return "÷";
+      if (operator === "-") return "−";
+      return "+";
+    }
+
+    document.querySelectorAll(".key").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.number) inputNumber(button.dataset.number);
+        if (button.dataset.action === "decimal") inputDecimal();
+        if (button.dataset.action === "operator") chooseOperator(button.dataset.value);
+        if (button.dataset.action === "equals") equals();
+        if (button.dataset.action === "clear") clearCalculator();
+        if (button.dataset.action === "backspace") backspace();
+        if (button.dataset.action === "percent") applyPercent();
+      });
+    });
+
+    document.querySelectorAll("[data-memory]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.memory === "save") saveMemory();
+        if (button.dataset.memory === "clear") clearMemory();
+      });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (/^\d$/.test(event.key)) inputNumber(event.key);
+      if (event.key === ".") inputDecimal();
+      if (["+", "-", "*", "/"].includes(event.key)) chooseOperator(event.key);
+      if (event.key === "Enter" || event.key === "=") equals();
+      if (event.key === "Backspace") backspace();
+      if (event.key === "Escape") clearCalculator();
+      if (event.key === "%") applyPercent();
+      if (event.key.toLowerCase() === "n") toggleSign();
+    });
+
+    render();
+  </script>
+</body>
+</html>
