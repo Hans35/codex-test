@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五子棋</title>
+  <style>
+    :root {
+      --ink: #17211c;
+      --muted: #637067;
+      --paper: #f6f3ea;
+      --panel: #ffffff;
+      --line: #24352d;
+      --board: #d9a957;
+      --board-dark: #b98234;
+      --green: #27745d;
+      --red: #b44b43;
+      --shadow: 0 18px 45px rgba(25, 35, 29, 0.18);
+      --cell: min(5.35vw, 36px);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(135deg, rgba(39, 116, 93, 0.12), transparent 38%),
+        linear-gradient(315deg, rgba(180, 75, 67, 0.10), transparent 36%),
+        var(--paper);
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      min-height: 100vh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) 300px;
+      gap: 28px;
+      align-items: center;
+      padding: 28px 0;
+    }
+
+    .game-area {
+      display: grid;
+      gap: 18px;
+      justify-items: center;
+    }
+
+    header {
+      width: min(100%, 640px);
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: end;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 56px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .turn-pill {
+      min-width: 134px;
+      padding: 12px 14px;
+      border: 1px solid rgba(23, 33, 28, 0.12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 8px 28px rgba(25, 35, 29, 0.08);
+    }
+
+    .turn-label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .turn-name {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 5px;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .stone-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-block;
+      background: radial-gradient(circle at 32% 28%, #5d625f, #050706 74%);
+      box-shadow: inset -3px -4px 7px rgba(0, 0, 0, 0.45);
+    }
+
+    .stone-dot.white {
+      background: radial-gradient(circle at 32% 28%, #fff, #d8d6ce 70%);
+      border: 1px solid rgba(23, 33, 28, 0.16);
+      box-shadow: inset -4px -5px 8px rgba(120, 110, 92, 0.24);
+    }
+
+    .board-wrap {
+      width: calc(var(--cell) * 14 + 34px);
+      height: calc(var(--cell) * 14 + 34px);
+      max-width: calc(100vw - 32px);
+      max-height: calc(100vw - 32px);
+      padding: 17px;
+      border-radius: 8px;
+      background:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.20), transparent 45%),
+        repeating-linear-gradient(90deg, rgba(95, 54, 18, 0.08) 0 12px, transparent 12px 24px),
+        var(--board);
+      border: 2px solid var(--board-dark);
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .board {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: var(--cell) var(--cell);
+      background-position: 0 0;
+    }
+
+    .star {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--line);
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .cell {
+      width: var(--cell);
+      height: var(--cell);
+      border: 0;
+      padding: 0;
+      border-radius: 50%;
+      background: transparent;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+    }
+
+    .cell::after {
+      content: "";
+      width: 78%;
+      height: 78%;
+      border-radius: 50%;
+      position: absolute;
+      inset: 11%;
+      opacity: 0;
+      transform: scale(0.86);
+      transition: opacity 120ms ease, transform 120ms ease;
+    }
+
+    .cell:hover::after {
+      opacity: 0.24;
+      background: currentColor;
+      transform: scale(1);
+    }
+
+    .cell.black,
+    .cell.white {
+      cursor: default;
+    }
+
+    .cell.black::after,
+    .cell.white::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .cell.black::after {
+      background: radial-gradient(circle at 32% 27%, #656b67, #050706 72%);
+      box-shadow: 0 6px 9px rgba(0, 0, 0, 0.35), inset -4px -5px 8px rgba(0, 0, 0, 0.48);
+    }
+
+    .cell.white::after {
+      background: radial-gradient(circle at 32% 27%, #fff, #dbd8ce 72%);
+      box-shadow: 0 6px 9px rgba(0, 0, 0, 0.22), inset -4px -5px 8px rgba(116, 105, 86, 0.24);
+      border: 1px solid rgba(23, 33, 28, 0.14);
+    }
+
+    .cell.win::before {
+      content: "";
+      width: 48%;
+      height: 48%;
+      border: 3px solid var(--red);
+      border-radius: 50%;
+      position: absolute;
+      inset: 26%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    aside {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid rgba(23, 33, 28, 0.10);
+      box-shadow: 0 12px 32px rgba(25, 35, 29, 0.10);
+      padding: 18px;
+    }
+
+    .status {
+      display: grid;
+      gap: 8px;
+    }
+
+    .status-title {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .status-text {
+      min-height: 44px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat {
+      min-height: 72px;
+      border-radius: 8px;
+      background: rgba(246, 243, 234, 0.76);
+      padding: 12px;
+      display: grid;
+      align-content: center;
+      gap: 4px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stat strong {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button.action {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      color: white;
+      background: var(--green);
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    button.action.secondary {
+      color: var(--ink);
+      background: #e7dfcf;
+    }
+
+    button.action:disabled {
+      opacity: 0.46;
+      cursor: not-allowed;
+    }
+
+    button.action:not(:disabled):hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .history {
+      max-height: 236px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 3px;
+    }
+
+    .move {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(23, 33, 28, 0.08);
+      padding-bottom: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .move:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      aside {
+        width: min(100%, 640px);
+        margin: 0 auto;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .panel:first-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 620px) {
+      :root {
+        --cell: calc((100vw - 66px) / 14);
+      }
+
+      main {
+        width: calc(100% - 20px);
+        padding: 18px 0;
+        gap: 18px;
+      }
+
+      header {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .turn-pill {
+        width: 100%;
+      }
+
+      aside {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="game-area" aria-label="五子棋棋局">
+      <header>
+        <div>
+          <h1>五子棋</h1>
+          <p class="subtitle">黑棋先手，横竖斜任意方向连成五子获胜。</p>
+        </div>
+        <div class="turn-pill" aria-live="polite">
+          <span class="turn-label">当前回合</span>
+          <span class="turn-name"><i class="stone-dot" id="turnDot"></i><span id="turnName">黑棋</span></span>
+        </div>
+      </header>
+
+      <div class="board-wrap">
+        <div class="board" id="board" role="grid" aria-label="15乘15五子棋棋盘"></div>
+      </div>
+    </section>
+
+    <aside>
+      <section class="panel status" aria-live="polite">
+        <div class="status-title" id="statusTitle">对局开始</div>
+        <div class="status-text" id="statusText">请黑棋落子。</div>
+        <div class="controls">
+          <button class="action secondary" id="undoButton" type="button" disabled>↶ 悔棋</button>
+          <button class="action" id="resetButton" type="button">↻ 重开</button>
+        </div>
+      </section>
+
+      <section class="panel stats" aria-label="对局统计">
+        <div class="stat">
+          <span>步数</span>
+          <strong id="moveCount">0</strong>
+        </div>
+        <div class="stat">
+          <span>用时</span>
+          <strong id="timer">00:00</strong>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="history" id="history" aria-label="落子记录">
+          <div class="move"><span>暂无落子</span><span>--</span></div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const size = 15;
+    const boardElement = document.querySelector("#board");
+    const turnDot = document.querySelector("#turnDot");
+    const turnName = document.querySelector("#turnName");
+    const statusTitle = document.querySelector("#statusTitle");
+    const statusText = document.querySelector("#statusText");
+    const undoButton = document.querySelector("#undoButton");
+    const resetButton = document.querySelector("#resetButton");
+    const moveCount = document.querySelector("#moveCount");
+    const timer = document.querySelector("#timer");
+    const historyElement = document.querySelector("#history");
+
+    let board = createBoard();
+    let current = "black";
+    let moves = [];
+    let winner = null;
+    let winningCells = [];
+    let startedAt = null;
+    let ticker = null;
+
+    function createBoard() {
+      return Array.from({ length: size }, () => Array(size).fill(null));
+    }
+
+    function buildBoard() {
+      boardElement.innerHTML = "";
+      const starPoints = [3, 7, 11];
+
+      starPoints.forEach((x) => {
+        starPoints.forEach((y) => {
+          const star = document.createElement("span");
+          star.className = "star";
+          star.style.left = `${x * 100 / (size - 1)}%`;
+          star.style.top = `${y * 100 / (size - 1)}%`;
+          boardElement.appendChild(star);
+        });
+      });
+
+      for (let y = 0; y < size; y += 1) {
+        for (let x = 0; x < size; x += 1) {
+          const cell = document.createElement("button");
+          cell.className = "cell";
+          cell.type = "button";
+          cell.style.left = `${x * 100 / (size - 1)}%`;
+          cell.style.top = `${y * 100 / (size - 1)}%`;
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          cell.setAttribute("role", "gridcell");
+          cell.setAttribute("aria-label", (x + 1) + "列" + (y + 1) + "行");
+          cell.addEventListener("click", () => placeStone(x, y));
+          boardElement.appendChild(cell);
+        }
+      }
+    }
+
+    function placeStone(x, y) {
+      if (winner || board[y][x]) return;
+
+      if (!startedAt) startTimer();
+
+      board[y][x] = current;
+      moves.push({ x, y, color: current });
+
+      const line = findWinningLine(x, y, current);
+      if (line.length >= 5) {
+        winner = current;
+        winningCells = line;
+        stopTimer();
+      } else if (moves.length === size * size) {
+        winner = "draw";
+        stopTimer();
+      } else {
+        current = current === "black" ? "white" : "black";
+      }
+
+      render();
+    }
+
+    function findWinningLine(x, y, color) {
+      const directions = [
+        [1, 0],
+        [0, 1],
+        [1, 1],
+        [1, -1],
+      ];
+
+      for (const [dx, dy] of directions) {
+        const line = [{ x, y }];
+        collect(line, x, y, dx, dy, color);
+        collect(line, x, y, -dx, -dy, color);
+
+        if (line.length >= 5) {
+          return line.sort((a, b) => a.y - b.y || a.x - b.x);
+        }
+      }
+
+      return [];
+    }
+
+    function collect(line, x, y, dx, dy, color) {
+      let nextX = x + dx;
+      let nextY = y + dy;
+
+      while (
+        nextX >= 0 &&
+        nextX < size &&
+        nextY >= 0 &&
+        nextY < size &&
+        board[nextY][nextX] === color
+      ) {
+        line.push({ x: nextX, y: nextY });
+        nextX += dx;
+        nextY += dy;
+      }
+    }
+
+    function undo() {
+      if (!moves.length || winner) {
+        if (winner) resetWinStateOnly();
+        else return;
+      }
+
+      const last = moves.pop();
+      board[last.y][last.x] = null;
+      current = last.color;
+
+      if (!moves.length) {
+        stopTimer();
+        startedAt = null;
+        timer.textContent = "00:00";
+      }
+
+      render();
+    }
+
+    function resetWinStateOnly() {
+      winner = null;
+      winningCells = [];
+    }
+
+    function resetGame() {
+      board = createBoard();
+      current = "black";
+      moves = [];
+      winner = null;
+      winningCells = [];
+      startedAt = null;
+      stopTimer();
+      timer.textContent = "00:00";
+      render();
+    }
+
+    function startTimer() {
+      startedAt = Date.now();
+      ticker = window.setInterval(updateTimer, 1000);
+      updateTimer();
+    }
+
+    function stopTimer() {
+      if (ticker) window.clearInterval(ticker);
+      ticker = null;
+    }
+
+    function updateTimer() {
+      if (!startedAt) return;
+      const seconds = Math.floor((Date.now() - startedAt) / 1000);
+      const minutePart = String(Math.floor(seconds / 60)).padStart(2, "0");
+      const secondPart = String(seconds % 60).padStart(2, "0");
+      timer.textContent = minutePart + ":" + secondPart;
+    }
+
+    function render() {
+      document.querySelectorAll(".cell").forEach((cell) => {
+        const x = Number(cell.dataset.x);
+        const y = Number(cell.dataset.y);
+        const color = board[y][x];
+        cell.className = "cell" + (color ? " " + color : "");
+        cell.disabled = Boolean(color || winner);
+        cell.style.color = current === "black" ? "#111" : "#fff";
+        cell.setAttribute("aria-label", (x + 1) + "列" + (y + 1) + "行" + (color ? colorName(color) : "空位"));
+      });
+
+      winningCells.forEach(({ x, y }) => {
+        const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+        if (cell) cell.classList.add("win");
+      });
+
+      turnDot.classList.toggle("white", current === "white");
+      turnName.textContent = colorName(current);
+      moveCount.textContent = moves.length;
+      undoButton.disabled = moves.length === 0;
+
+      if (winner === "draw") {
+        statusTitle.textContent = "平局";
+        statusText.textContent = "棋盘已满，没有一方连成五子。";
+      } else if (winner) {
+        statusTitle.textContent = colorName(winner) + "获胜";
+        statusText.textContent = "胜负已分，可以悔棋回到上一手，或直接重开。";
+      } else if (moves.length) {
+        const last = moves[moves.length - 1];
+        statusTitle.textContent = colorName(current) + "回合";
+        statusText.textContent = colorName(last.color) + "刚落在 " + (last.x + 1) + " 列 " + (last.y + 1) + " 行。";
+      } else {
+        statusTitle.textContent = "对局开始";
+        statusText.textContent = "请黑棋落子。";
+      }
+
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (!moves.length) {
+        historyElement.innerHTML = '<div class="move"><span>暂无落子</span><span>--</span></div>';
+        return;
+      }
+
+      historyElement.innerHTML = moves
+        .slice()
+        .reverse()
+        .map((move, index) => {
+          const step = moves.length - index;
+          return '<div class="move"><span>' + step + ". " + colorName(move.color) + "</span><span>" + (move.x + 1) + "列 " + (move.y + 1) + "行</span></div>";
+        })
+        .join("");
+    }
+
+    function colorName(color) {
+      return color === "black" ? "黑棋" : "白棋";
+    }
+
+    undoButton.addEventListener("click", undo);
+    resetButton.addEventListener("click", resetGame);
+
+    buildBoard();
+    render();
+  </script>
+</body>
+</html>
