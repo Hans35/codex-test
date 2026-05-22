@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>五子棋</title>
+  <title>经典五子棋</title>
   <style>
     :root {
       --ink: #17211c;
@@ -371,7 +371,7 @@
     <section class="game-area" aria-label="五子棋棋局">
       <header>
         <div>
-          <h1>五子棋</h1>
+          <h1>经典五子棋</h1>
           <p class="subtitle">黑棋先手，横竖斜任意方向连成五子获胜。</p>
         </div>
         <div class="turn-pill" aria-live="polite">
@@ -463,11 +463,7 @@
           cell.dataset.x = x;
           cell.dataset.y = y;
           cell.setAttribute("role", "gridcell");
-<<<<<<< ours
           cell.setAttribute("aria-label", (x + 1) + "列" + (y + 1) + "行");
-=======
-          cell.setAttribute("aria-label", `${x + 1}列${y + 1}行`);
->>>>>>> theirs
           cell.addEventListener("click", () => placeStone(x, y));
           boardElement.appendChild(cell);
         }
@@ -587,11 +583,7 @@
       const seconds = Math.floor((Date.now() - startedAt) / 1000);
       const minutePart = String(Math.floor(seconds / 60)).padStart(2, "0");
       const secondPart = String(seconds % 60).padStart(2, "0");
-<<<<<<< ours
       timer.textContent = minutePart + ":" + secondPart;
-=======
-      timer.textContent = `${minutePart}:${secondPart}`;
->>>>>>> theirs
     }
 
     function render() {
@@ -599,17 +591,10 @@
         const x = Number(cell.dataset.x);
         const y = Number(cell.dataset.y);
         const color = board[y][x];
-<<<<<<< ours
         cell.className = "cell" + (color ? " " + color : "");
         cell.disabled = Boolean(color || winner);
         cell.style.color = current === "black" ? "#111" : "#fff";
         cell.setAttribute("aria-label", (x + 1) + "列" + (y + 1) + "行" + (color ? colorName(color) : "空位"));
-=======
-        cell.className = `cell${color ? ` ${color}` : ""}`;
-        cell.disabled = Boolean(color || winner);
-        cell.style.color = current === "black" ? "#111" : "#fff";
-        cell.setAttribute("aria-label", `${x + 1}列${y + 1}行${color ? colorName(color) : "空位"}`);
->>>>>>> theirs
       });
 
       winningCells.forEach(({ x, y }) => {
@@ -626,21 +611,12 @@
         statusTitle.textContent = "平局";
         statusText.textContent = "棋盘已满，没有一方连成五子。";
       } else if (winner) {
-<<<<<<< ours
         statusTitle.textContent = colorName(winner) + "获胜";
         statusText.textContent = "胜负已分，可以悔棋回到上一手，或直接重开。";
       } else if (moves.length) {
         const last = moves[moves.length - 1];
         statusTitle.textContent = colorName(current) + "回合";
         statusText.textContent = colorName(last.color) + "刚落在 " + (last.x + 1) + " 列 " + (last.y + 1) + " 行。";
-=======
-        statusTitle.textContent = `${colorName(winner)}获胜`;
-        statusText.textContent = "胜负已分，可以悔棋回到上一手，或直接重开。";
-      } else if (moves.length) {
-        const last = moves[moves.length - 1];
-        statusTitle.textContent = `${colorName(current)}回合`;
-        statusText.textContent = `${colorName(last.color)}刚落在 ${last.x + 1} 列 ${last.y + 1} 行。`;
->>>>>>> theirs
       } else {
         statusTitle.textContent = "对局开始";
         statusText.textContent = "请黑棋落子。";
@@ -660,11 +636,7 @@
         .reverse()
         .map((move, index) => {
           const step = moves.length - index;
-<<<<<<< ours
           return '<div class="move"><span>' + step + ". " + colorName(move.color) + "</span><span>" + (move.x + 1) + "列 " + (move.y + 1) + "行</span></div>";
-=======
-          return `<div class="move"><span>${step}. ${colorName(move.color)}</span><span>${move.x + 1}列 ${move.y + 1}行</span></div>`;
->>>>>>> theirs
         })
         .join("");
     }
